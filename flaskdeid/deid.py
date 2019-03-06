@@ -1,7 +1,7 @@
 import json
 import logging
 
-from annotation import Annotation, unionize_annotations
+from annotation import Annotation, AnnotationFactory, unionize_annotations
 from flask import Blueprint, render_template, request, session, abort, jsonify, Response, current_app, g
 from flaskdeid import medlpInterface
 import hutchner
@@ -16,8 +16,8 @@ bp = Blueprint('deid', __name__, url_prefix='/deid')
 @bp.route("/annotate", methods=['POST'])
 def identify_phi(**kwargs):
     annotations = []
-    annotations += [Annotation.from_medlp(phi) for phi in medlp.annotate_phi(**kwargs)]
-    annotations += [Annotation.from_hutchner(phi) for phi in hutchner.annotate_phi(**kwargs)]
+    annotations += [AnnotationFactory.from_medlp(phi) for phi in medlp.annotate_phi(**kwargs)]
+    annotations += [AnnotationFactory.from_hutchner(phi) for phi in hutchner.annotate_phi(**kwargs)]
     merged_results = unionize_annotations(annotations)
     return Response(json.dumps([res.to_dict() for res in merged_results]),
                     mimetype=u'application/json')

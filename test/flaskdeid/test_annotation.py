@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from flaskdeid.annotation import Annotation, MergedAnnotation
+from flaskdeid.annotation import Annotation, AnnotationFactory, MergedAnnotation
 from flaskdeid.annotation import unionize_annotations
 
 
@@ -117,19 +117,19 @@ class AnnotationTest(TestCase):
     def test_annotation_empty(self):
         ann1 = Annotation('test')
         self.assertTrue(ann1.empty())
-        ann2 = Annotation.from_hutchner(self.sample_hutchner[0])
+        ann2 = AnnotationFactory.from_hutchner(self.sample_hutchner[0])
         self.assertFalse(ann2.empty())
 
     def test_annotation_from_medlp(self):
         for sample in self.sample_medlp:
-            ann = Annotation.from_medlp(sample)
+            ann = AnnotationFactory.from_medlp(sample)
             self.assertEqual(ann.origin, 'medlp')
             self.assertEqual(ann.text, sample['Text'])
             self.assertEqual(ann.start, sample['BeginOffset'])
 
     def test_annotation_from_hutchner(self):
         for sample in self.sample_hutchner:
-            ann = Annotation.from_hutchner(sample)
+            ann = AnnotationFactory.from_hutchner(sample)
             self.assertEqual(ann.origin, 'hutchner')
             self.assertEqual(ann.type, sample['label'])
             self.assertEqual(ann.score, sample['confidence'])
@@ -140,9 +140,9 @@ class AnnotationTest(TestCase):
         self.assertEqual(data['origin'], 'test')
 
     def test_mergedannotation_from_annotations(self):
-        ann1 = Annotation.from_medlp(self.sample_medlp[0])
-        ann2 = Annotation.from_hutchner(self.sample_hutchner[0])
-        merged = MergedAnnotation.from_annotations([ann1, ann2])
+        ann1 = AnnotationFactory.from_medlp(self.sample_medlp[0])
+        ann2 = AnnotationFactory.from_hutchner(self.sample_hutchner[0])
+        merged = AnnotationFactory.from_annotations([ann1, ann2])
         self.assertEqual(merged.origin, 'merged')
         self.assertEqual(merged.start, ann1.start)
         self.assertEqual(merged.end, ann2.end)
@@ -154,9 +154,9 @@ class AnnotationTest(TestCase):
         self.assertTrue(ann1 in merged.source_annotations)
 
     def test_mergedannotation_to_dict(self):
-        ann1 = Annotation.from_medlp(self.sample_medlp[0])
-        ann2 = Annotation.from_hutchner(self.sample_hutchner[0])
-        merged = MergedAnnotation.from_annotations([ann1, ann2])
+        ann1 = AnnotationFactory.from_medlp(self.sample_medlp[0])
+        ann2 = AnnotationFactory.from_hutchner(self.sample_hutchner[0])
+        merged = AnnotationFactory.from_annotations([ann1, ann2])
         data = merged.to_dict()
         self.assertEqual(data['origin'], 'merged')
         self.assertEqual(data['text'], 'Mr. John Smith Jr.')
@@ -165,13 +165,13 @@ class AnnotationTest(TestCase):
         self.assertEqual(len(detailed['source_annotations']), 2)
 
     def test_mergedannotation_invalid_cases(self):
-        self.assertRaises(ValueError, MergedAnnotation.from_annotations, [])
+        self.assertRaises(ValueError, AnnotationFactory.from_annotations, [])
         self.assertRaises(ValueError, MergedAnnotation().add_annotation,
                           Annotation('test'))
 
     def test_unionize_annotations(self):
-        anns = [Annotation.from_medlp(ann) for ann in self.sample_medlp]
-        anns += [Annotation.from_hutchner(ann) for ann in self.sample_hutchner]
+        anns = [AnnotationFactory.from_medlp(ann) for ann in self.sample_medlp]
+        anns += [AnnotationFactory.from_hutchner(ann) for ann in self.sample_hutchner]
         union = unionize_annotations(anns)
 
         self.assertEqual(len(union), 6)

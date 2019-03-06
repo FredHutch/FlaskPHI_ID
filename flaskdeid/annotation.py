@@ -1,5 +1,42 @@
+class AnnotationFactory:
+
+    def __init__(self, medlp_key, hutchner_key):
+        self.medlp_key = medlp_key
+        self.hutchner_key = hutchner_key
+
+    @staticmethod
+    def from_medlp(medlp):
+        ann = Annotation('medlp')
+        ann.start = medlp.get('BeginOffset')
+        ann.end = medlp.get('EndOffset')
+        ann.score = medlp.get('Score')
+        ann.type = medlp.get('Type')
+        ann.text = medlp.get('Text')
+        return ann
+
+    @staticmethod
+    def from_hutchner(hutchner):
+        ann = Annotation('hutchner')
+        ann.start = hutchner.get('start')
+        ann.end = hutchner.get('stop')
+        ann.score = hutchner.get('confidence')
+        ann.type = hutchner.get('label')
+        ann.text = hutchner.get('text')
+        return ann
+
+    @staticmethod
+    def from_annotations(anns):
+        if not anns:
+            raise ValueError("annotation list cannot be empty")
+        merged = MergedAnnotation()
+        for ann in anns:
+            merged.add_annotation(ann)
+        return merged
+
+
 """Module for standardizing and combining annotations"""
 class Annotation(object):
+
     def __init__(self, origin):
         self.origin = origin
         self.start = None
@@ -10,24 +47,6 @@ class Annotation(object):
 
     def empty(self):
         return not (self.start and self.end and self.text)
-
-    def from_medlp(medlp):
-        ann = Annotation('medlp')
-        ann.start = medlp.get('BeginOffset')
-        ann.end = medlp.get('EndOffset')
-        ann.score = medlp.get('Score')
-        ann.type = medlp.get('Type')
-        ann.text = medlp.get('Text')
-        return ann
-
-    def from_hutchner(hutchner):
-        ann = Annotation('hutchner')
-        ann.start = hutchner.get('start')
-        ann.end = hutchner.get('stop')
-        ann.score = hutchner.get('confidence')
-        ann.type = hutchner.get('label')
-        ann.text = hutchner.get('text')
-        return ann
 
     def to_dict(self):
         data = {}
@@ -75,13 +94,6 @@ class MergedAnnotation(Annotation):
             self.type = "Unknown" if (self.type != ann.type) else self.type
         self.source_annotations.append(ann)
 
-    def from_annotations(anns):
-        if not anns:
-            raise ValueError("annotation list cannot be empty")
-        merged = MergedAnnotation()
-        for ann in anns:
-            merged.add_annotation(ann)
-        return merged
 
     def to_dict(self, detailed=False):
         data = super().to_dict()
@@ -100,11 +112,11 @@ def unionize_annotations(annotations):
     for idx in range(0, max([ann.end for ann in annotations])):
         # check if current annotations end at idx
         if current_anns and all((ann.end <= idx) for ann in current_anns):
-            final_anns.append(MergedAnnotation.from_annotations(current_anns))
+            final_anns.append(AnnotationFactory.from_annotations(current_anns))
             current_anns = []
         # get all new annotations at idx
         while sorted_anns and (sorted_anns[0].start == idx):
             current_anns.append(sorted_anns.pop(0))
     if current_anns:
-        final_anns.append(MergedAnnotation.from_annotations(current_anns))
+        final_anns.append(AnnotationFactory.from_annotations(current_anns))
     return final_anns
