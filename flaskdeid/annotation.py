@@ -1,8 +1,21 @@
+"""Module for standardizing and combining annotations"""
+
+# TODO: If more origins/mappings added, rip this out into separate json file
+HUTCHNER_TYPE_MAP = {
+    "EMPLOYER": "PROFESSION",
+    "HOSPITAL": "ADDRESS",
+    "IDENTIFIER": "ID",
+    "LOCATION": "ADDRESS",
+    "PHONE_NUMBER": "PHONE_OR_FAX",
+    "SSN": "ID",
+    "WARD": "ADDRESS"
+}
+
+
 class AnnotationFactory:
 
-    def __init__(self, medlp_key, hutchner_key):
-        self.medlp_key = medlp_key
-        self.hutchner_key = hutchner_key
+    def __init__(self):
+        pass
 
     @staticmethod
     def from_medlp(medlp):
@@ -22,6 +35,7 @@ class AnnotationFactory:
         ann.score = hutchner.get('confidence')
         ann.type = hutchner.get('label')
         ann.text = hutchner.get('text')
+        ann.type_map = HUTCHNER_TYPE_MAP
         return ann
 
     @staticmethod
@@ -34,7 +48,6 @@ class AnnotationFactory:
         return merged
 
 
-"""Module for standardizing and combining annotations"""
 class Annotation(object):
 
     def __init__(self, origin):
@@ -42,11 +55,24 @@ class Annotation(object):
         self.start = None
         self.end = None
         self.score = None
-        self.type = None
         self.text = None
+        self._type = None
+        self.type_map = {}
+
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, t):
+        self._type = t.upper() if t else None
+
+    @property
+    def parent_type(self):
+        return self.type_map.get(self.type, self.type)
 
     def empty(self):
-        return not (self.start and self.end and self.text)
+        return not (self.start and self.end and self.text and self.type)
 
     def to_dict(self):
         data = {}
@@ -60,6 +86,7 @@ class Annotation(object):
 
 
 class MergedAnnotation(Annotation):
+
     def __init__(self):
         super().__init__('merged')
         self.source_annotations = []
@@ -76,6 +103,14 @@ class MergedAnnotation(Annotation):
     def source_origins(self):
         return set([ann.origin for ann in self.source_annotations])
 
+    @property
+    def type(self):
+        if len(set(self.source_types)) == 1:
+            return self.source_annotations[0].type
+        elif len(set([ann.parent_type for ann in self.source_annotations])) == 1:
+            return self.source_annotations[0].parent_type
+        return "UNKNOWN"
+
     def add_annotation(self, ann):
         if ann.empty():
             raise ValueError("new annotation cannot be empty")
@@ -83,7 +118,6 @@ class MergedAnnotation(Annotation):
             self.text = ann.text
             self.start = ann.start
             self.end = ann.end
-            self.type = ann.type
         else:
             if (self.start <= ann.start):
                 self.text = self.text + ann.text[(self.end-ann.start):]
@@ -91,9 +125,7 @@ class MergedAnnotation(Annotation):
                 self.text = ann.text + self.text[(ann.end-self.start):]
             self.start = min([self.start, ann.start])
             self.end = max([self.end, ann.end])
-            self.type = "Unknown" if (self.type != ann.type) else self.type
         self.source_annotations.append(ann)
-
 
     def to_dict(self, detailed=False):
         data = super().to_dict()
