@@ -10,7 +10,8 @@ class AnnotationTest(TestCase):
         # sample text
         self.sample_text = ("Patient is Mr. John Smith Jr., a 48-year-old "
             "teacher and chef. His phone number is (555) 867-5309, "
-            "and his address is 123 Sesame St, Seattle, WA 99999.")
+            "and his address is 123 Sesame St, Seattle, WA 99999. "
+            "Test.")
         # sample MedLP results
         self.sample_medlp = [
             {
@@ -50,7 +51,7 @@ class AnnotationTest(TestCase):
                 "Score": 0.96,
                 "Text": "(555) 867-5309",
                 "Category": "PROTECTED_HEALTH_INFORMATION",
-                "Type": "PHONE",
+                "Type": "PHONE_OR_FAX",
                 "Traits": []
             },
             {
@@ -61,6 +62,16 @@ class AnnotationTest(TestCase):
                 "Text": "Sesame St, Seattle, WA",
                 "Category": "PROTECTED_HEALTH_INFORMATION",
                 "Type": "ADDRESS",
+                "Traits": []
+            },
+            {
+                "Id": 5,
+                "BeginOffset": 152,
+                "EndOffset": 156,
+                "Score": 0.94,
+                "Text": "Test",
+                "Category": "PROTECTED_HEALTH_INFORMATION",
+                "Type": "NAME",
                 "Traits": []
             }
         ]
@@ -78,21 +89,21 @@ class AnnotationTest(TestCase):
                 "stop": 44,
                 "confidence": 0.02,
                 "text": "48-year-old",
-                "label": "AGE"
+                "label": "DATE"
             },
             {
                 "start": 57,
                 "stop": 61,
                 "confidence": 0.03,
                 "text": "chef",
-                "label": "JOB"
+                "label": "PROFESSION"
             },
             {
                 "start": 89,
                 "stop": 97,
                 "confidence": 0.04,
                 "text": "867-5309",
-                "label": "PHONE"
+                "label": "PHONE_NUMBER"
             },
             {
                 "start": 118,
@@ -107,6 +118,13 @@ class AnnotationTest(TestCase):
                 "confidence": 0.06,
                 "text": "WA 99999",
                 "label": "LOCATION"
+            },
+            {
+                "start": 152,
+                "stop": 156,
+                "confidence": 0.07,
+                "text": "Test",
+                "label": "HOSPITAL"
             }
         ]
 
@@ -164,6 +182,25 @@ class AnnotationTest(TestCase):
         detailed = merged.to_dict(detailed=True)
         self.assertEqual(len(detailed['source_annotations']), 2)
 
+    def test_mergedannotation_type_merge(self):
+        # matching type case
+        ann1 = AnnotationFactory.from_medlp(self.sample_medlp[0])
+        ann2 = AnnotationFactory.from_hutchner(self.sample_hutchner[0])
+        merged = AnnotationFactory.from_annotations([ann1, ann2])
+        self.assertEqual(merged.type, "NAME")
+
+        # matching parent-type case
+        ann1 = AnnotationFactory.from_medlp(self.sample_medlp[3])
+        ann2 = AnnotationFactory.from_hutchner(self.sample_hutchner[3])
+        merged = AnnotationFactory.from_annotations([ann1, ann2])
+        self.assertEqual(merged.type, "PHONE_OR_FAX")
+
+        # mismatched type/parent-type case
+        ann1 = AnnotationFactory.from_medlp(self.sample_medlp[5])
+        ann2 = AnnotationFactory.from_hutchner(self.sample_hutchner[6])
+        merged = AnnotationFactory.from_annotations([ann1, ann2])
+        self.assertEqual(merged.type, "UNKNOWN")
+
     def test_mergedannotation_invalid_cases(self):
         self.assertRaises(ValueError, AnnotationFactory.from_annotations, [])
         self.assertRaises(ValueError, MergedAnnotation().add_annotation,
@@ -174,7 +211,7 @@ class AnnotationTest(TestCase):
         anns += [AnnotationFactory.from_hutchner(ann) for ann in self.sample_hutchner]
         union = unionize_annotations(anns)
 
-        self.assertEqual(len(union), 6)
+        self.assertEqual(len(union), 7)
         for merged in union:
             self.assertEqual(merged.text,
                              self.sample_text[merged.start:merged.end])
