@@ -19,7 +19,8 @@ def identify_phi(**kwargs):
     annotations += [Annotation.from_medlp(phi) for phi in medlp.annotate_phi(**kwargs)]
     annotations += [Annotation.from_hutchner(phi) for phi in hutchner.annotate_phi(**kwargs)]
     merged_results = unionize_annotations(annotations)
-    return Response(json.dumps(merged_results), mimetype=u'application/json')
+    return Response(json.dumps([res.to_dict() for res in merged_results]),
+                    mimetype=u'application/json')
 
 @bp.route("/resynthesize", methods=['POST'])
 def resynthesize_text(**kwargs):
