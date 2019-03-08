@@ -43,6 +43,7 @@ setup(
     url='https://github.com/WhiteAu/FlaskML',
     install_requires=['hdc_preprocessing',
                       'amazonserviceinterface',
+                      'HutchNERPredict',
                       'sectionerex',
                       'flask',
                       'boto3',
@@ -50,6 +51,8 @@ setup(
     dependency_links = ['https://{}@github.com/FredHutch/hdc-preprocessing/tarball/master#egg=hdc_preprocessing'
                             .format(get_env_variable('HDCGITAUTHTOKEN')),
                         "https://{}@github.com/FredHutch/HDCMedLPInterface/tarball/master#egg=amazonserviceinterface"
+                            .format(get_env_variable('HDCGITAUTHTOKEN')),
+                        "https://{}@github.com/FredHutch/HutchNERPredict/tarball/master#egg=HutchNERPredict"
                             .format(get_env_variable('HDCGITAUTHTOKEN')),
                         "https://{}@github.com/FredHutch/SectionerEx/tarball/master#egg=sectionerex"
                             .format(get_env_variable('HDCGITAUTHTOKEN')),
