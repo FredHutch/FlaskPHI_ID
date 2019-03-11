@@ -1,11 +1,11 @@
 import json
 import logging
 
-from annotation import Annotation, AnnotationFactory, unionize_annotations
+from flaskdeid.annotation import Annotation, AnnotationFactory, unionize_annotations
 from flask import Blueprint, render_template, request, session, abort, jsonify, Response, current_app, g
 from flaskdeid import medlpInterface
-import hutchner
-import medlp
+import flaskdeid.hutchner as hutchner
+import flaskdeid.medlp as medlp
 
 
 logger = logging.getLogger(__name__)
