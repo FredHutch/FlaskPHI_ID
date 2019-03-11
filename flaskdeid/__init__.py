@@ -18,6 +18,9 @@ logger.setLevel(logging.INFO)
 from amazonserviceinterface.MedLPServiceInterface import MedLPServiceInterface
 import clinicalnotesprocessor.JSONParser as JSONParser
 medlpInterface = MedLPServiceInterface(JSONParser.xform_dict_to_json)
+#load HutchNER interaface
+from HutchNERPredict import hutchner as hutchnerpredict
+hutchNERInterface = hutchnerpredict.HutchNER()
 
 def index():
     return render_template(
@@ -62,6 +65,7 @@ def create_app(test_config=None):
     from . import db
     db.init_app(app)
 
+    hutchNERInterface.load_model(input_path=app.config['HUTCHNER_MODEL'])
 
     from flaskdeid import medlp, preprocessing, sectionerex, hutchner, deid
     app.register_blueprint(medlp.bp)
