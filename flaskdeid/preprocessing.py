@@ -2,7 +2,7 @@ import json
 import logging
 
 from flask import Blueprint, render_template, request, session, abort, jsonify, Response, current_app, g
-from hdc_preprocessing import preprocess as preprocessInterface
+from blob_preprocessing import preprocess as preprocessInterface
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
