@@ -29,8 +29,9 @@ def annotate_phi():
     return annotate(entityTypes=["PROTECTED_HEALTH_INFORMATION"])
 
 def _get_entities(note_text, **kwargs):
+    entities = []
     try:
-        if 'entityTypes' in kwargs and kwargs['entityTypes'] == ["PROTECTED_HEALTH_INFORMATION"]:
+        if 'entityTypes' in kwargs:
             entities = hutchNERInterface.predict(note_text).to_json()
     except ValueError as e:
         msg = "An error occurred while calling HutchNER"
