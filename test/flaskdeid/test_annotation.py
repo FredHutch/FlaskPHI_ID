@@ -16,10 +16,10 @@ class AnnotationTest(TestCase):
         self.sample_medlp = [
             {
                 "Id": 0,
-                "BeginOffset": 11,
+                "BeginOffset": 0,
                 "EndOffset": 25,
                 "Score": 0.99,
-                "Text": "Mr. John Smith",
+                "Text": "Patient is Mr. John Smith",
                 "Category": "PROTECTED_HEALTH_INFORMATION",
                 "Type": "NAME",
                 "Traits": []
@@ -164,7 +164,7 @@ class AnnotationTest(TestCase):
         self.assertEqual(merged.origin, 'merged')
         self.assertEqual(merged.start, ann1.start)
         self.assertEqual(merged.end, ann2.end)
-        self.assertEqual(merged.text, "Mr. John Smith Jr.")
+        self.assertEqual(merged.text, "Patient is Mr. John Smith Jr.")
 
         self.assertEqual(merged.source_origins,
                          set([ann1.origin, ann2.origin]))
@@ -177,7 +177,7 @@ class AnnotationTest(TestCase):
         merged = AnnotationFactory.from_annotations([ann1, ann2])
         data = merged.to_dict()
         self.assertEqual(data['origin'], 'merged')
-        self.assertEqual(data['text'], 'Mr. John Smith Jr.')
+        self.assertEqual(data['text'], 'Patient is Mr. John Smith Jr.')
         self.assertTrue('medlp' in data['source_origins'])
         detailed = merged.to_dict(detailed=True)
         self.assertEqual(len(detailed['source_annotations']), 2)

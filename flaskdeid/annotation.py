@@ -72,7 +72,7 @@ class Annotation(object):
         return self.type_map.get(self.type, self.type)
 
     def empty(self):
-        return not (self.start and self.end and self.text and self.type)
+        return not (self.start is not None and self.end is not None and self.text and self.type)
 
     def to_dict(self):
         data = {}
@@ -129,9 +129,9 @@ class MergedAnnotation(Annotation):
 
     def to_dict(self, detailed=False):
         data = super().to_dict()
-        data['source_types'] = self.source_types
+        data['source_types'] = list(self.source_types)
         data['source_scores'] = self.source_scores
-        data['source_origins'] = self.source_origins
+        data['source_origins'] = list(self.source_origins)
         if detailed:
             data['source_annotations'] = [ann.to_dict() for ann in self.source_annotations]
         return data
