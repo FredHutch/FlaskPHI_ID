@@ -1,15 +1,24 @@
 """Module for standardizing and combining annotations"""
+from operator import attrgetter
 
 # TODO: If more origins/mappings added, rip this out into separate json file
 HUTCHNER_TYPE_MAP = {
+    "WARD_NAME": "ADDRESS",
+    "URL_OR_IP": "URL",
+    "BIOMETRIC_IDENTIFIER": "ID",
+    "PHI_OTHER": "UNKNOWN",
     "EMPLOYER": "PROFESSION",
-    "HOSPITAL": "ADDRESS",
-    "IDENTIFIER": "ID",
-    "LOCATION": "ADDRESS",
+    "PATIENT_OR_FAMILY_NAME": "NAME",
+    "HOSPITAL_NAME": "ADDRESS",
+    "MEDICAL_RECORD_NUMBER": "ID",
+    "ADDRESS_AND_COMPONENTS": "ADDRESS",
     "PHONE_NUMBER": "PHONE_OR_FAX",
-    "SSN": "ID",
-    "WARD": "ADDRESS"
+    "PROVIDER_NAME": "NAME",
+    "CERTIFICATE_OR_LICENSE_NUMBER": "ID",
+    "ACCOUNT_NUMBER": "ID",
+    "VEHICLE_OR_DEVICE_NUMBER": "ID"
 }
+TYPE_THRESHOLD = 0.5
 
 
 class AnnotationFactory:
@@ -96,6 +105,10 @@ class MergedAnnotation(Annotation):
         return set([ann.type for ann in self.source_annotations])
 
     @property
+    def source_parent_types(self):
+        return set([ann.parent_type for ann in self.source_annotations])
+
+    @property
     def source_scores(self):
         return [ann.score for ann in self.source_annotations]
 
@@ -105,19 +118,46 @@ class MergedAnnotation(Annotation):
 
     @property
     def type(self):
-        if len(set(self.source_types)) == 1:
+        if len(self.source_types) == 1:
             return self.source_annotations[0].type
-        elif len(set([ann.parent_type for ann in self.source_annotations])) == 1:
+        elif len(self.source_parent_types) == 1:
+            subtypes = [x for x in self.source_annotations if (x.type != x.parent_type)]
+            top = max(subtypes, key=attrgetter('score'))
+            if top.score >= TYPE_THRESHOLD:
+                return top.type
             return self.source_annotations[0].parent_type
         return "UNKNOWN"
+
+    @type.setter
+    def type(self, t):
+        pass
+
+    @property
+    def score(self):
+        if len(self.source_types) == 1:
+            return max([x.score for x in self.source_annotations])
+        elif len(self.source_parent_types) == 1:
+            subtypes = [x for x in self.source_annotations if (x.type != x.parent_type)]
+            top_score = max([x.score for x in subtypes])
+            if top_score >= TYPE_THRESHOLD:
+                return top_score
+            return max([x.score for x in self.source_annotations])
+        return TYPE_THRESHOLD
+
+    @score.setter
+    def score(self, t):
+        pass
 
     def add_annotation(self, ann):
         if ann.empty():
             raise ValueError("new annotation cannot be empty")
-        if self.empty():
+        elif self.empty():
             self.text = ann.text
             self.start = ann.start
             self.end = ann.end
+            self.type_map = ann.type_map
+        elif (self.end < ann.start) or (self.start > ann.end):
+            raise ValueError("annotation text must overlap")
         else:
             if (self.start <= ann.start):
                 self.text = self.text + ann.text[(self.end-ann.start):]
@@ -125,6 +165,7 @@ class MergedAnnotation(Annotation):
                 self.text = ann.text + self.text[(ann.end-self.start):]
             self.start = min([self.start, ann.start])
             self.end = max([self.end, ann.end])
+            self.type_map = {**ann.type_map, **self.type_map}
         self.source_annotations.append(ann)
 
     def to_dict(self, detailed=False):
