@@ -82,14 +82,14 @@ class AnnotationTest(TestCase):
                 "stop": 29,
                 "confidence": 0.01,
                 "text": "John Smith Jr.",
-                "label": "NAME"
+                "label": "PATIENT_OR_FAMILY_NAME"
             },
             {
                 "start": 33,
                 "stop": 44,
                 "confidence": 0.02,
                 "text": "48-year-old",
-                "label": "DATE"
+                "label": "AGE"
             },
             {
                 "start": 57,
@@ -110,21 +110,21 @@ class AnnotationTest(TestCase):
                 "stop": 131,
                 "confidence": 0.05,
                 "text": "123 Sesame St",
-                "label": "LOCATION"
+                "label": "ADDRESS_AND_COMPONENTS"
             },
             {
                 "start": 142,
                 "stop": 150,
                 "confidence": 0.06,
                 "text": "WA 99999",
-                "label": "LOCATION"
+                "label": "ADDRESS_AND_COMPONENTS"
             },
             {
                 "start": 152,
                 "stop": 156,
                 "confidence": 0.07,
                 "text": "Test",
-                "label": "HOSPITAL"
+                "label": "URL_OR_IP"
             }
         ]
 
@@ -184,18 +184,52 @@ class AnnotationTest(TestCase):
 
     def test_mergedannotation_type_merge(self):
         # matching type case
+        ann1 = AnnotationFactory.from_medlp(self.sample_medlp[1])
+        ann2 = AnnotationFactory.from_hutchner(self.sample_hutchner[1])
+        merged = AnnotationFactory.from_annotations([ann1, ann2])
+        self.assertEqual(merged.type, ann1.type)
+        self.assertEqual(merged.score, ann1.score)
+
+        # matching type/parent-type case; score < threshold
         ann1 = AnnotationFactory.from_medlp(self.sample_medlp[0])
         ann2 = AnnotationFactory.from_hutchner(self.sample_hutchner[0])
         merged = AnnotationFactory.from_annotations([ann1, ann2])
-        self.assertEqual(merged.type, "NAME")
+        self.assertEqual(merged.type, ann1.type)
+        self.assertEqual(merged.score, ann1.score)
 
-        # matching parent-type case
-        ann1 = AnnotationFactory.from_medlp(self.sample_medlp[3])
-        ann2 = AnnotationFactory.from_hutchner(self.sample_hutchner[3])
+        # matching type/parent-type case; score > threshold
+        ann2.score = 0.8
         merged = AnnotationFactory.from_annotations([ann1, ann2])
-        self.assertEqual(merged.type, "PHONE_OR_FAX")
+        self.assertEqual(merged.type, ann2.type)
+        self.assertEqual(merged.score, ann2.score)
 
-        # mismatched type/parent-type case
+        # matching parent-type/type case; score > threshold
+        merged = AnnotationFactory.from_annotations([ann2, ann1])
+        self.assertEqual(merged.type, ann2.type)
+        self.assertEqual(merged.score, ann2.score)
+
+        # matching parent-type/type case; score < threshold
+        ann2.score = 0.4
+        merged = AnnotationFactory.from_annotations([ann2, ann1])
+        self.assertEqual(merged.type, ann1.type)
+        self.assertEqual(merged.score, ann1.score)
+
+        # matching parent-type/parent-type case; score1 > score2
+        ann1 = AnnotationFactory.from_hutchner(self.sample_hutchner[0])
+        ann2 = AnnotationFactory.from_hutchner(self.sample_hutchner[0])
+        ann1.score = 0.6
+        ann2.type = "PROVIDER_NAME"
+        merged = AnnotationFactory.from_annotations([ann1, ann2])
+        self.assertEqual(merged.type, ann1.type)
+        self.assertEqual(merged.score, ann1.score)
+
+        # matching parent-type/parent-type case; score1 < score2
+        ann2.score = 0.8
+        merged = AnnotationFactory.from_annotations([ann1, ann2])
+        self.assertEqual(merged.type, ann2.type)
+        self.assertEqual(merged.score, ann2.score)
+
+        # mismatched parent-type/parent-type case
         ann1 = AnnotationFactory.from_medlp(self.sample_medlp[5])
         ann2 = AnnotationFactory.from_hutchner(self.sample_hutchner[6])
         merged = AnnotationFactory.from_annotations([ann1, ann2])
@@ -205,6 +239,12 @@ class AnnotationTest(TestCase):
         self.assertRaises(ValueError, AnnotationFactory.from_annotations, [])
         self.assertRaises(ValueError, MergedAnnotation().add_annotation,
                           Annotation('test'))
+
+        # attempt to combine non-overlapping annotations
+        ann1 = AnnotationFactory.from_medlp(self.sample_medlp[0])
+        ann2 = AnnotationFactory.from_hutchner(self.sample_hutchner[3])
+        ma = AnnotationFactory.from_annotations([ann1])
+        self.assertRaises(ValueError, ma.add_annotation, ann2)
 
     def test_unionize_annotations(self):
         anns = [AnnotationFactory.from_medlp(ann) for ann in self.sample_medlp]
