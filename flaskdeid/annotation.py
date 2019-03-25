@@ -165,7 +165,7 @@ class MergedAnnotation(Annotation):
                 self.text = ann.text + self.text[(ann.end-self.start):]
             self.start = min([self.start, ann.start])
             self.end = max([self.end, ann.end])
-            self.type_map = {**ann.type_map, **self.type_map}
+            self.type_map = self.type_map or ann.type_map
         self.source_annotations.append(ann)
 
     def to_dict(self, detailed=False):
