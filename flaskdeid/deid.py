@@ -18,16 +18,20 @@ def annotate(**kwargs):
     if not request.json or 'extract_text' not in request.json:
         abort(400)
 
+    detailed_annotations = False
+    if 'annotation_by_source' in request.json:
+        detailed_annotations = request.json['annotation_by_source']
     note_text = request.json['extract_text']
+
     if note_text:
-        return identify_phi(note_text, **kwargs)
+        return identify_phi(note_text, detailed=detailed_annotations, **kwargs)
     else:
         msg = "No Entity Text was found"
         logger.info("No entities returned")
         return Response(msg, status=400)
 
 
-def identify_phi(note_text, **kwargs):
+def identify_phi(note_text, detailed=False, **kwargs):
     annotations = []
     try:
         annotations += [AnnotationFactory.from_medlp(phi) for phi in medlpInterface.get_phi(note_text)]
@@ -35,7 +39,6 @@ def identify_phi(note_text, **kwargs):
         msg = "An error occurred while calling MedLP"
         logger.warning("{}: {}".format(msg, e))
         return Response(msg, status=400)
-
     try:
         annotations += [AnnotationFactory.from_hutchner(phi) for phi in
                         hutchNERInterface.predict(note_text, **kwargs).NER_token_labels]
@@ -44,7 +47,7 @@ def identify_phi(note_text, **kwargs):
         logger.warning("{}: {}".format(msg, e))
         return Response(msg, status=400)
     merged_results = unionize_annotations(annotations)
-    return Response(json.dumps([res.to_dict() for res in merged_results]),
+    return Response(json.dumps([res.to_dict(detailed=detailed) for res in merged_results]),
                     mimetype=u'application/json')
 
 
