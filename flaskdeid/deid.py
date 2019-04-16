@@ -18,13 +18,10 @@ def annotate(**kwargs):
     if not request.json or 'extract_text' not in request.json:
         abort(400)
 
-    detailed_annotations = False
-    if 'annotation_by_source' in request.json:
-        detailed_annotations = request.json['annotation_by_source']
     note_text = request.json['extract_text']
 
     if note_text:
-        return identify_phi(note_text, detailed=detailed_annotations, **kwargs)
+        return identify_phi(note_text, detailed=request.json.get('annotation_by_source', False), **kwargs)
     else:
         msg = "No Entity Text was found"
         logger.info("No entities returned")
