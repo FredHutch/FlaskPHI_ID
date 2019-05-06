@@ -179,6 +179,8 @@ class MergedAnnotation(Annotation):
 
 
 def unionize_annotations(annotations):
+    if not annotations:
+        return []
     sorted_anns = sorted(annotations, key=lambda x: x.start)
     final_anns = []
     current_anns = []
