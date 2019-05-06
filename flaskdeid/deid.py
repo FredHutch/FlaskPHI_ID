@@ -38,7 +38,8 @@ def identify_phi(note_text, detailed=False, **kwargs):
         return Response(msg, status=400)
     try:
         annotations += [AnnotationFactory.from_hutchner(phi) for phi in
-                        hutchNERInterface.predict(note_text, **kwargs).NER_token_labels]
+                        hutchNERInterface.predict(note_text, **kwargs).NER_token_labels
+                        if phi.get('label') != "O"]
     except ValueError as e:
         msg = "An error occurred while calling HutchNER"
         logger.warning("{}: {}".format(msg, e))
