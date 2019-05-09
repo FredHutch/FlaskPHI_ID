@@ -66,6 +66,7 @@ def create_app(test_config=None):
     db.init_app(app)
 
     hutchNERInterface.load_model(input_path=app.config['HUTCHNER_MODEL'])
+    hutchNERInterface.load_clusters(input_path=app.config['CLINIC_NOTE_CLUSTERS'])
 
     from flaskdeid import medlp, preprocessing, sectionerex, hutchner, deid
     app.register_blueprint(medlp.bp)
