@@ -9,16 +9,6 @@ logger.setLevel(logging.INFO)
 
 bp = Blueprint('medlp', __name__, url_prefix='/medlp')
 
-@bp.route("/train")
-def train_new_model():
-    return "Stub for training a new model!"
-
-
-@bp.route("/train/<int:model_id>")
-def update_existing_model(model_id):
-    return "Stub for online training an existing model!"
-
-
 @bp.route("/annotate/", methods=['POST'])
 def annotate(**kwargs):
     if not request.json or not 'extract_text' in request.json:
@@ -38,31 +28,6 @@ def annotate_phi():
     return annotate(entityTypes=["PROTECTED_HEALTH_INFORMATION"])
 
 
-@bp.route("/annotate/medication", methods=['POST'])
-def annotate_medication():
-    return annotate(entityTypes=["MEDICATION"])
-
-
-@bp.route("/annotate/condition", methods=['POST'])
-def annotate_condition():
-    return annotate(entityTypes=["MEDICAL_CONDITION"])
-
-
-@bp.route("/annotate/ttp", methods=['POST'])
-def annotate_ttp():
-    return annotate(entityTypes=["TEST_TREATMENT_PROCEDURE"])
-
-
-@bp.route("/annotate/anatomy", methods=['POST'])
-def annotate_anatomy():
-    return annotate(entityTypes=["ANATOMY"])
-
-
-@bp.route("/members/<string:name>/")
-def getMember(name):
-    return name
-
-
 def _get_entities(note_text, **kwargs):
 
     try:
@@ -71,8 +36,8 @@ def _get_entities(note_text, **kwargs):
         else:
             entities = medlpInterface.get_entities(note_text, **kwargs)
     except ValueError as e:
-        msg = "An error occurred while calling MedLP"
-        logger.warning("An error occurred while calling MedLPInterface: {}".format(e))
+        msg = "An error occurred while calling Comprehend Medical/MedLPInterface"
+        logger.warning("An error occurred while calling Comprehend Medical/MedLPInterface: {}".format(e))
         return Response(msg, status=400)
 
     logger.info("{} entities returned for entity types".format(len(entities)))

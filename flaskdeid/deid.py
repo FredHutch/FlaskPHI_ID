@@ -47,18 +47,3 @@ def identify_phi(note_text, detailed=False, **kwargs):
     merged_results = unionize_annotations(annotations)
     return Response(json.dumps([res.to_dict(detailed=detailed) for res in merged_results]),
                     mimetype=u'application/json')
-
-
-@bp.route("/resynthesize", methods=['POST'])
-def resynthesize_text(**kwargs):
-    if not request.json or 'deid_text' not in request.json:
-        abort(400)
-
-    deid_text = request.json['deid_text']
-    resynth_results = _resynthesize(deid_text, **kwargs)
-
-    return Response(json.dumps(resynth_results), mimetype=u'application/json')
-
-
-def _resynthesize(annotated_text, **kwargs):
-    return Response("To be Implemented!", status=501)
