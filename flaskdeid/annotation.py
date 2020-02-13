@@ -1,22 +1,15 @@
 """Module for standardizing and combining annotations"""
 from operator import attrgetter
 
-# TODO: If more origins/mappings added, rip this out into separate json file
+# map hutchner labels to appriate comp med labels
 HUTCHNER_TYPE_MAP = {
-    "WARD_NAME": "ADDRESS",
-    "URL_OR_IP": "URL",
-    "BIOMETRIC_IDENTIFIER": "ID",
-    "PHI_OTHER": "UNKNOWN",
-    "EMPLOYER": "PROFESSION",
-    "PATIENT_OR_FAMILY_NAME": "NAME",
+    "WARD": "ADDRESS",
+    "SPECIALTY":"ADDRESS",
     "HOSPITAL_NAME": "ADDRESS",
     "MEDICAL_RECORD_NUMBER": "ID",
-    "ADDRESS_AND_COMPONENTS": "ADDRESS",
-    "PHONE_NUMBER": "PHONE_OR_FAX",
+    "PATIENT_OR_FAMILY_NAME": "NAME",
     "PROVIDER_NAME": "NAME",
-    "CERTIFICATE_OR_LICENSE_NUMBER": "ID",
-    "ACCOUNT_NUMBER": "ID",
-    "VEHICLE_OR_DEVICE_NUMBER": "ID"
+    "EMPLOYER": "PROFESSION"
 }
 TYPE_THRESHOLD = 0.5
 
