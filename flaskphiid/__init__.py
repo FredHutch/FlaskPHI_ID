@@ -15,9 +15,9 @@ logger.setLevel(logging.INFO)
 
 
 # load medlp interface
-from amazonserviceinterface.MedLPServiceInterface import MedLPServiceInterface
-import clinicalnotesprocessor.JSONParser as JSONParser
-compmedInterface = MedLPServiceInterface(JSONParser.xform_dict_to_json)
+from compmed.CompMedServiceInterface import CompMedServiceInterface
+import utils.json_parser_utils as JSONParser
+compmedInterface = CompMedServiceInterface(JSONParser.xform_dict_to_json)
 #load HutchNER interface
 from HutchNERPredict import hutchner as hutchnerpredict
 hutchNERInterface = hutchnerpredict.HutchNER()
