@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from flaskdeid.annotation import Annotation, AnnotationFactory, MergedAnnotation
-from flaskdeid.annotation import unionize_annotations
+from flaskphiid.annotation import Annotation, AnnotationFactory, MergedAnnotation
+from flaskphiid.annotation import unionize_annotations
 
 
 class AnnotationTest(TestCase):

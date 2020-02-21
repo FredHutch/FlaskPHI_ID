@@ -1,4 +1,4 @@
-# flaskdeid.py or flaskdeid/__init__.py
+# flaskphiid.py or flaskphiid/__init__.py
 import logging
 import os
 from flask import Flask, render_template
@@ -17,8 +17,8 @@ logger.setLevel(logging.INFO)
 # load medlp interface
 from amazonserviceinterface.MedLPServiceInterface import MedLPServiceInterface
 import clinicalnotesprocessor.JSONParser as JSONParser
-medlpInterface = MedLPServiceInterface(JSONParser.xform_dict_to_json)
-#load HutchNER interaface
+compmedInterface = MedLPServiceInterface(JSONParser.xform_dict_to_json)
+#load HutchNER interface
 from HutchNERPredict import hutchner as hutchnerpredict
 hutchNERInterface = hutchnerpredict.HutchNER()
 
@@ -28,15 +28,16 @@ def index():
 
 
 def create_app(test_config=None):
-    # create and configure the flaskdeid
+    # create and configure the flaskphiid
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
         SECRET_KEY=os.urandom(24),
-        DATABASE=os.path.join(app.instance_path, 'flaskdeid.sqlite'),
+        DATABASE=os.path.join(app.instance_path, 'flaskphiid.sqlite'),
     )
+    app.url_map.strict_slashes = False
 
     if test_config is None:
-        # Now we can access the configuration variables via flaskdeid.config["VAR_NAME"].
+        # Now we can access the configuration variables via flaskphiid.config["VAR_NAME"].
         # Load the default configuration
         #app.config.from_object('config.default')
 
@@ -62,22 +63,20 @@ def create_app(test_config=None):
         pass
 
     #set up database
-    from . import db
-    db.init_app(app)
+    #from . import db
+    #db.init_app(app)
 
     hutchNERInterface.load_model(input_path=app.config['HUTCHNER_MODEL'])
     hutchNERInterface.load_clusters(input_path=app.config['CLINIC_NOTE_CLUSTERS'])
 
-    from flaskdeid import medlp, preprocessing, sectionerex, hutchner, deid
-    app.register_blueprint(medlp.bp)
-    app.register_blueprint(preprocessing.bp)
-    app.register_blueprint(sectionerex.bp)
+    from flaskphiid import compmed, hutchner, identifyphi
+    app.register_blueprint(compmed.bp)
     app.register_blueprint(hutchner.bp)
-    app.register_blueprint(deid.bp)
+    app.register_blueprint(identifyphi.bp)
 
     # make url_for('index') == url_for('blog.index')
-    # in another flaskdeid, you might define a separate main index here with
-    # flaskdeid.route, while giving the blog blueprint a url_prefix, but for
+    # in another flaskphiid, you might define a separate main index here with
+    # flaskphiid.route, while giving the blog blueprint a url_prefix, but for
     # the tutorial the blog will be the main index
     app.add_url_rule('/', view_func=index)
 

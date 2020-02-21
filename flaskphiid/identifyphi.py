@@ -1,19 +1,19 @@
 import json
 import logging
 
-from flaskdeid.annotation import AnnotationFactory, unionize_annotations
+from flaskphiid.annotation import AnnotationFactory, unionize_annotations
 from flask import Blueprint, render_template, request, session, abort, jsonify, Response, current_app, g
-import flaskdeid.hutchner as hutchner
-from flaskdeid import medlpInterface, hutchNERInterface
+import flaskphiid.hutchner as hutchner
+from flaskphiid import compmedInterface, hutchNERInterface
 
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-bp = Blueprint('deid', __name__, url_prefix='/deid')
+bp = Blueprint('identifyphi', __name__, url_prefix='/identifyphi')
 
 
-@bp.route("/annotate", methods=['POST'])
+@bp.route("/", methods=['POST'])
 def annotate(**kwargs):
     if not request.json or 'extract_text' not in request.json:
         abort(400)
@@ -31,7 +31,7 @@ def annotate(**kwargs):
 def identify_phi(note_text, detailed=False, **kwargs):
     annotations = []
     try:
-        annotations += [AnnotationFactory.from_medlp(phi) for phi in medlpInterface.get_phi(note_text)]
+        annotations += [AnnotationFactory.from_compmed(phi) for phi in compmedInterface.get_phi(note_text)]
     except ValueError as e:
         msg = "An error occurred while calling MedLP"
         logger.warning("{}: {}".format(msg, e))

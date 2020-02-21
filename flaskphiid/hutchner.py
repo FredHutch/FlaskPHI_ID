@@ -2,7 +2,7 @@ import json
 import logging
 
 from flask import Blueprint, render_template, request, session, abort, jsonify, Response, current_app, g
-from flaskdeid import hutchNERInterface
+from flaskphiid import hutchNERInterface
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -11,7 +11,7 @@ bp = Blueprint('hutchner', __name__, url_prefix='/hutchner')
 
 
 
-@bp.route("/annotate/", methods=['POST'])
+@bp.route("/", methods=['POST'])
 def annotate(**kwargs):
     if not request.json or not 'extract_text' in request.json:
         abort(400)
@@ -24,7 +24,7 @@ def annotate(**kwargs):
         logger.info("No entities returned")
         return Response(msg, status=400)
 
-@bp.route("/annotate/phi", methods=['POST'])
+@bp.route("/phi", methods=['POST'])
 def annotate_phi():
     return annotate(entityTypes=["PROTECTED_HEALTH_INFORMATION"])
 
