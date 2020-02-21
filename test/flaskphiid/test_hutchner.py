@@ -1,18 +1,19 @@
-import flaskdeid
+import flaskphiid
 import unittest
 import json
 
 from flask import g, session, Response
-from flaskdeid import create_app
-from unittest.mock import patch
-import flaskdeid.medlp as medlp
+from flaskphiid import create_app
+from unittest.mock import patch, MagicMock
+import flaskphiid.hutchner as hutchner
 
-class MedLPEndpointTests(unittest.TestCase):
+class hutchnerEndpointTests(unittest.TestCase):
 
     def setUp(self):
         # creates a test client
         test_config = {'SECRET_KEY':'dev',
                        'TESTING':True,
+                       'HUTCHNER_MODEL': "test_resources/simple_crf_ner.pkl"
 
         }
         self.app = create_app(test_config).test_client()
@@ -25,7 +26,6 @@ class MedLPEndpointTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-
     def make_json_post_to_endpoint(self, endpoint, dict_to_jsonify):
         return self.app.post(endpoint,
                                data=json.dumps(dict_to_jsonify),
@@ -36,42 +36,31 @@ class MedLPEndpointTests(unittest.TestCase):
     def test_annotate_no_entity_text(self):
         # sends HTTP GET request to the application
         # on the specified path
-        result = self.app.post('/medlp/annotate/')
+        result = self.app.post('/hutchner/annotate/')
 
         # assert the status code of the response
         self.assertEqual(result.status_code, 400)
 
-
     def test_annotate_empty_entity_text(self):
         # sends HTTP GET request to the application
         # on the specified path
-        result = self.make_json_post_to_endpoint('/medlp/annotate/',
+        result = self.make_json_post_to_endpoint('/hutchner/annotate/',
                                                  dict())
 
         # assert the status code of the response
         self.assertEqual(result.status_code, 400)
 
 
-    @patch('flaskdeid.medlpInterface.get_entities')
-    def test_get_entities_happy_case(self, mockMedLPInterface):
-
+    @patch('flaskphiid.hutchNERInterface.predict')
+    def test_get_entities_happy_case(self, mockHutchNERInterface):
+        mockEntityResponse = MagicMock()
         entity_response_json = [{'fox': 'PHI'}, {'dog': 'PHI'}]
-        mockMedLPInterface.return_value = entity_response_json
+        mockEntityResponse.to_json.return_value = entity_response_json
+        mockHutchNERInterface.return_value = mockEntityResponse
         expected_result = Response(entity_response_json, mimetype=u'application/json')
-        result = medlp._get_entities(self.INPUT_TEXT, entityTypes="all")
+        result = hutchner._get_entities(self.INPUT_TEXT, entityTypes="all")
 
-        mockMedLPInterface.assert_called_with(self.INPUT_TEXT, entityTypes="all")
-
-
-    @patch('flaskdeid.medlpInterface.get_entities')
-    def test_annotate_no_specified_types(self, mockMedLPInterface):
-        entity_response_json = [{'fox': 'PHI'}, {'dog': 'PHI'}]
-        mockMedLPInterface.return_value = entity_response_json
-
-        result = self.make_json_post_to_endpoint('/medlp/annotate/',
-                                                 dict(extract_text=self.INPUT_TEXT))
-
-        mockMedLPInterface.assert_called_with(self.INPUT_TEXT)
+        mockHutchNERInterface.assert_called_with(self.INPUT_TEXT)
 
 
 if __name__ == '__main__':

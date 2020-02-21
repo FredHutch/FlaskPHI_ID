@@ -20,13 +20,13 @@ class AnnotationFactory:
         pass
 
     @staticmethod
-    def from_medlp(medlp):
-        ann = Annotation('medlp')
-        ann.start = medlp.get('BeginOffset')
-        ann.end = medlp.get('EndOffset')
-        ann.score = medlp.get('Score')
-        ann.type = medlp.get('Type')
-        ann.text = medlp.get('Text')
+    def from_compmed(compmed):
+        ann = Annotation('compmed')
+        ann.start = compmed.get('BeginOffset')
+        ann.end = compmed.get('EndOffset')
+        ann.score = compmed.get('Score')
+        ann.type = compmed.get('Type')
+        ann.text = compmed.get('Text')
         return ann
 
     @staticmethod

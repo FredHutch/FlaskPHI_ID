@@ -1,4 +1,4 @@
-from flaskdeid import create_app
+from flaskphiid import create_app
 
 
 def test_config():

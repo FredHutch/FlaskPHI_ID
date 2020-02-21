@@ -1,19 +1,18 @@
-import flaskdeid
+import flaskphiid
 import unittest
 import json
 
 from flask import g, session, Response
-from flaskdeid import create_app
-from unittest.mock import patch, MagicMock
-import flaskdeid.hutchner as hutchner
+from flaskphiid import create_app
+from unittest.mock import patch
+import flaskphiid.compmed as compmed
 
-class hutchnerEndpointTests(unittest.TestCase):
+class CompMedEndpointTests(unittest.TestCase):
 
     def setUp(self):
         # creates a test client
         test_config = {'SECRET_KEY':'dev',
                        'TESTING':True,
-                       'HUTCHNER_MODEL': "test_resources/simple_crf_ner.pkl"
 
         }
         self.app = create_app(test_config).test_client()
@@ -26,41 +25,52 @@ class hutchnerEndpointTests(unittest.TestCase):
     def tearDown(self):
         pass
 
+
     def make_json_post_to_endpoint(self, endpoint, dict_to_jsonify):
         return self.app.post(endpoint,
                                data=json.dumps(dict_to_jsonify),
                                content_type='application/json'
                                )
 
-
     def test_annotate_no_entity_text(self):
         # sends HTTP GET request to the application
         # on the specified path
-        result = self.app.post('/hutchner/annotate/')
+        result = self.app.post('/compmed/')
 
         # assert the status code of the response
         self.assertEqual(result.status_code, 400)
 
+
     def test_annotate_empty_entity_text(self):
         # sends HTTP GET request to the application
         # on the specified path
-        result = self.make_json_post_to_endpoint('/hutchner/annotate/',
+        result = self.make_json_post_to_endpoint('/compmed/',
                                                  dict())
 
         # assert the status code of the response
         self.assertEqual(result.status_code, 400)
 
 
-    @patch('flaskdeid.hutchNERInterface.predict')
-    def test_get_entities_happy_case(self, mockHutchNERInterface):
-        mockEntityResponse = MagicMock()
-        entity_response_json = [{'fox': 'PHI'}, {'dog': 'PHI'}]
-        mockEntityResponse.to_json.return_value = entity_response_json
-        mockHutchNERInterface.return_value = mockEntityResponse
-        expected_result = Response(entity_response_json, mimetype=u'application/json')
-        result = hutchner._get_entities(self.INPUT_TEXT, entityTypes="all")
+    @patch('flaskphiid.compMedInterface.get_entities')
+    def test_get_entities_happy_case(self, mockCompMedInterface):
 
-        mockHutchNERInterface.assert_called_with(self.INPUT_TEXT)
+        entity_response_json = [{'fox': 'PHI'}, {'dog': 'PHI'}]
+        mockCompMedInterface.return_value = entity_response_json
+        expected_result = Response(entity_response_json, mimetype=u'application/json')
+        result = compmed._get_entities(self.INPUT_TEXT, entityTypes="all")
+
+        mockCompMedInterface.assert_called_with(self.INPUT_TEXT, entityTypes="all")
+
+
+    @patch('flaskphiid.compMedInterface.get_entities')
+    def test_annotate_no_specified_types(self, mockCompMedInterface):
+        entity_response_json = [{'fox': 'PHI'}, {'dog': 'PHI'}]
+        mockCompMedInterface.return_value = entity_response_json
+
+        result = self.make_json_post_to_endpoint('/compmed/',
+                                                 dict(extract_text=self.INPUT_TEXT))
+
+        mockCompMedInterface.assert_called_with(self.INPUT_TEXT)
 
 
 if __name__ == '__main__':

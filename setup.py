@@ -37,29 +37,26 @@ def get_env_variable(var_name, default=False):
             raise EnvironmentError(error_msg.format(var=var_name, env_file=env_file))
 
 setup(
-    name='FlaskDeID',
+    name='FlaskPHI_ID',
     version='0.1',
-    packages=['flaskdeid', 'test', 'test.flaskdeid',],
-    url='https://github.com/WhiteAu/FlaskML',
-    install_requires=['clinicalpreprocessing',
-                      'amazonserviceinterface',
+    packages=['flaskphiid',],
+    test_packages=['test', 'test.flaskphiid',],
+    url='https://github.com/FredHutch/FlaskPHI_ID',
+    install_requires=['compmed',
                       'HutchNERPredict',
-                      'sectionerex',
                       'flask',
                       'boto3',
                       ],
-    dependency_links = ['https://{}@github.com/FredHutch/hdc-preprocessing/tarball/master#egg=clinicalpreprocessing'
-                            .format(get_env_variable('HDCGITAUTHTOKEN')),
-                        "https://{}@github.com/FredHutch/HDCMedLPInterface/tarball/master#egg=amazonserviceinterface"
+    tests_require=['nose'],
+    test_suite='nose.collector',
+    dependency_links = ["https://{}@github.com/FredHutch/ComprehendMedicalInterface/tarball/master#egg=compmed"
                             .format(get_env_variable('HDCGITAUTHTOKEN')),
                         "https://{}@github.com/FredHutch/HutchNERPredict/tarball/master#egg=HutchNERPredict"
-                            .format(get_env_variable('HDCGITAUTHTOKEN')),
-                        "https://{}@github.com/FredHutch/SectionerEx/tarball/master#egg=sectionerex"
                             .format(get_env_variable('HDCGITAUTHTOKEN')),
                         ],
     license='',
     author='HDC Data Science',
     author_email='whiteau@fhcrc.org',
-    description='Flask Service for Deidentifying PHI',
+    description='Flask Service for Identifying PHI',
     zip_safe=False
 )
