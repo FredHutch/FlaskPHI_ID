@@ -16,7 +16,7 @@ logger.setLevel(logging.INFO)
 
 # load medlp interface
 from compmed.CompMedServiceInterface import CompMedServiceInterface
-import utils.json_parser_utils as JSONParser
+from utils import json_parser_util as JSONParser
 compmedInterface = CompMedServiceInterface(JSONParser.xform_dict_to_json)
 #load HutchNER interface
 from HutchNERPredict import hutchner as hutchnerpredict
@@ -66,11 +66,11 @@ def create_app(test_config=None):
     #from . import db
     #db.init_app(app)
 
-    hutchNERInterface.load_model(input_path=app.config['HUTCHNER_MODEL'])
-    hutchNERInterface.load_clusters(input_path=app.config['CLINIC_NOTE_CLUSTERS'])
+    hutchNERInterface.load_model(input_path='/Users/rlong/Desktop/Cortex/Models/phi.pkl')
+    hutchNERInterface.load_clusters(input_path='/Users/rlong/Desktop/Cortex/Clusters/MMC867k_FH255k.600.cbow.model.bin_k=800minibatch=False.kmeans')
 
-    from flaskphiid import compmed, hutchner, identifyphi
-    app.register_blueprint(compmed.bp)
+    from flaskphiid import compmedner, hutchner, identifyphi
+    app.register_blueprint(compmedner.bp)
     app.register_blueprint(hutchner.bp)
     app.register_blueprint(identifyphi.bp)
 
