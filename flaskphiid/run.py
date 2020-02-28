@@ -14,4 +14,6 @@ cmd_arg_parser.add_argument('-p',
                             help="Set port. Default is 5000 ")
 cmd_args = cmd_arg_parser.parse_args()
 
+#PREVIOUS FOR SSL ENABLING
+#app.run(ssl_context='adhoc', host=cmd_args.endpoint, port=cmd_args.port)
 app.run(host=cmd_args.endpoint, port=cmd_args.port)
