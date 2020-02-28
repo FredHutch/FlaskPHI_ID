@@ -46,6 +46,7 @@ setup(
                       'HutchNERPredict',
                       'flask',
                       'boto3',
+                      'utils',
                       ],
     tests_require=['nose'],
     test_suite='nose.collector',

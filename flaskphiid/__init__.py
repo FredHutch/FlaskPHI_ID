@@ -66,11 +66,11 @@ def create_app(test_config=None):
     #from . import db
     #db.init_app(app)
 
-    hutchNERInterface.load_model(input_path='/Users/rlong/Desktop/Cortex/Models/phi_v2_w_specialties.pkl')
-    hutchNERInterface.load_clusters(input_path='/Users/rlong/Desktop/Cortex/Clusters/MMC867k_FH255k.600.cbow.model.bin_k=1000minibatch=False.kmeans')
+    hutchNERInterface.load_model(input_path='/Users/rlong/Desktop/Cortex/Models/phi.pkl')
+    hutchNERInterface.load_clusters(input_path='/Users/rlong/Desktop/Cortex/Clusters/MMC867k_FH255k.600.cbow.model.bin_k=800minibatch=False.kmeans')
 
-    from flaskphiid import compmed_, hutchner, identifyphi
-    app.register_blueprint(compmed_.bp)
+    from flaskphiid import compmedner, hutchner, identifyphi
+    app.register_blueprint(compmedner.bp)
     app.register_blueprint(hutchner.bp)
     app.register_blueprint(identifyphi.bp)
 

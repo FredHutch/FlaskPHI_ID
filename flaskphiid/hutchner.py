@@ -18,7 +18,8 @@ def annotate(**kwargs):
 
     note_text = request.json['extract_text']
     if note_text:
-        return _get_entities(note_text, **kwargs)
+        entities = _get_entities(note_text, **kwargs)
+        return entities
     else:
         msg = "No Entity Text was found"
         logger.info("No entities returned")
@@ -40,4 +41,4 @@ def _get_entities(note_text, **kwargs):
 
     logger.info("{} entities returned for entity types".format(len(entities)))
     logger.info("entities: {}".format(entities))
-    return Response(entities, mimetype=u'application/json')
+    return Response(json.dumps(entities), mimetype=u'application/json')
