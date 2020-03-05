@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from flaskphiid.annotation import Annotation, AnnotationFactory, MergedAnnotation
 from flaskphiid.annotation import unionize_annotations
+from flaskphiid.annotation import IncompatibleTypeException
 
 
 class AnnotationTest(TestCase):
@@ -292,10 +293,11 @@ class AnnotationTest(TestCase):
         ann3 = AnnotationFactory.from_hutchner(self.sample_compound_hutchner[1])
         ann4 = AnnotationFactory.from_hutchner(self.sample_compound_hutchner[2])
 
-        merged = AnnotationFactory.from_annotations([ann1, ann2, ann3, ann4])
+        results = unionize_annotations([ann1, ann2, ann3, ann4])
         #Do we end up with the parent type after compound mapping?
-        self.assertEqual(merged.type, ann1.type)
-        self.assertEqual(merged.score, ann1.score)
+
+        self.assertEqual(results.type, ann1.type)
+        self.assertEqual(results.score, ann1.score)
 
     def test_mergedannotation_type_matching_parent_compound_child_maps(self):
         # matching parent-type/parent-type case; score1 > score2, 3, 4
@@ -303,14 +305,18 @@ class AnnotationTest(TestCase):
         ann2 = AnnotationFactory.from_hutchner(self.sample_compound_hutchner[0])
         ann3 = AnnotationFactory.from_hutchner(self.sample_compound_hutchner[1])
         ann4 = AnnotationFactory.from_hutchner(self.sample_compound_hutchner[2])
-        ann2.score = 0.8
+        ann2.score = 0.7
         ann3.score = 0.8
-        ann4.score = 0.8
+        ann4.score = 0.9
 
-        merged = AnnotationFactory.from_annotations([ann1, ann2, ann3, ann4])
+        results = unionize_annotations([ann1, ann2, ann3, ann4])
         # Do we end up with the parent type after compound mapping?
-        self.assertEqual(merged.type, ann1.type)
-        self.assertEqual(merged.score, ann1.score)
+        self.assertEqual(type(results), type(list()))
+        self.assertEqual(results[0].type, "ADDRESS")
+        self.assertEqual(results[1].type, "HOSPITAL_NAME")
+        self.assertEqual(results[2].type, "WARD")
+        self.assertEqual(results[3].type, "SPECIALTY")
+
 
     def test_mergedannotation_type_mismatched_parent_type(self):
         # mismatched parent-type/parent-type case
@@ -335,9 +341,41 @@ class AnnotationTest(TestCase):
         anns += [AnnotationFactory.from_hutchner(ann) for ann in self.sample_hutchner]
         union = unionize_annotations(anns)
 
-        self.assertEqual(len(union), 7)
+        self.assertEqual(len(union), 11)
         for merged in union:
             self.assertEqual(merged.text,
                              self.sample_text[merged.start:merged.end])
         self.assertEqual(len(union[5].source_annotations), 3)
         self.assertEqual(len(union[5].source_origins), 2)
+
+    def test_split_annotations_by_subtypes_single_type(self):
+        anns = [AnnotationFactory.from_compmed(ann) for ann in self.sample_compound_compmed]
+        anns += [AnnotationFactory.from_hutchner(ann) for ann in self.sample_compound_hutchner]
+        sorted_anns = sorted(anns, key=lambda x: x.start)
+        merged = MergedAnnotation()
+        for ann in anns:
+            merged.add_annotation(ann)
+        self.assertNotEqual(merged.type, "UNKNOWN")
+
+        actual = merged.split_annotations_by_subtypes()
+        self.assertEqual(len(actual), 4)
+        self.assertEqual(actual[0].type, 'ADDRESS') #the full span annotatoin
+        self.assertEqual(actual[1].type, "HOSPITAL_NAME")
+        self.assertEqual(actual[2].type, "WARD")
+        self.assertEqual(actual[3].type, "SPECIALTY")
+
+    def test_split_annotations_by_subtypes_multi_type_type_exception(self):
+        anns = [AnnotationFactory.from_compmed(self.sample_compmed[5])]
+        anns += [AnnotationFactory.from_hutchner(self.sample_hutchner[6])]
+        sorted_anns = sorted(anns, key=lambda x: x.start)
+        merged = MergedAnnotation()
+        for ann in anns:
+            merged.add_annotation(ann)
+        self.assertEqual(merged.type, "UNKNOWN")
+        with self.assertRaises(IncompatibleTypeException) as context:
+            actual = merged.split_annotations_by_subtypes()
+        self.assertTrue("URL_OR_IP" in context.exception.type_set)
+        self.assertTrue("NAME" in context.exception.type_set)
+
+
+
