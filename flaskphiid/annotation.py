@@ -54,7 +54,7 @@ class AnnotationFactory:
         merged = MergedAnnotation()
         for ann in anns:
             merged.add_annotation(ann)
-        if merged.has_compatible_family_typelist:
+        if merged.is_unknown_type:
             return merged.split_annotations_by_subtypes()
 
         return [merged]
@@ -146,7 +146,7 @@ class MergedAnnotation(Annotation):
         pass
 
     @property
-    def has_compatible_family_typelist(self):
+    def is_unknown_type(self):
         return self.type != 'UNKNOWN'
 
     @property
@@ -187,7 +187,7 @@ class MergedAnnotation(Annotation):
 
     def split_annotations_by_subtypes(self):
         if len(self.source_types) == 1:
-            return self.source_annotations
+            return [self]
 
         if len(self.source_parent_types) == 1:
             subtypes = [x for x in self.source_annotations if (x.type != x.parent_type)]

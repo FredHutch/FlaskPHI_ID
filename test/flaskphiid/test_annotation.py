@@ -341,7 +341,7 @@ class AnnotationTest(TestCase):
         anns += [AnnotationFactory.from_hutchner(ann) for ann in self.sample_hutchner]
         union = unionize_annotations(anns)
 
-        self.assertEqual(len(union), 11)
+        self.assertEqual(len(union), 10)
         for merged in union:
             self.assertEqual(merged.text,
                              self.sample_text[merged.start:merged.end])
@@ -369,7 +369,7 @@ class AnnotationTest(TestCase):
         anns += [AnnotationFactory.from_hutchner(self.sample_hutchner[6])]
         sorted_anns = sorted(anns, key=lambda x: x.start)
         merged = MergedAnnotation()
-        for ann in anns:
+        for ann in sorted_anns:
             merged.add_annotation(ann)
         self.assertEqual(merged.type, "UNKNOWN")
         with self.assertRaises(IncompatibleTypeException) as context:
@@ -377,5 +377,24 @@ class AnnotationTest(TestCase):
         self.assertTrue("URL_OR_IP" in context.exception.type_set)
         self.assertTrue("NAME" in context.exception.type_set)
 
+    def test_split_annotations_by_subtypes_single_type_no_split(self):
+        '''
+        assert that when we attempt split a merged annotation that is all of a single child type,
+        we return the same merged annotation (self) as a list
+        :return:  [self]
+        '''
+        anns = [AnnotationFactory.from_hutchner(self.sample_hutchner[4])]
+        self.sample_hutchner[5]['start'] = self.sample_hutchner[4]['stop']
+        anns += [AnnotationFactory.from_hutchner(self.sample_hutchner[5])]
+        sorted_anns = sorted(anns, key=lambda x: x.start)
+        merged = MergedAnnotation()
+        for ann in sorted_anns:
+            merged.add_annotation(ann)
+
+        actual = merged.split_annotations_by_subtypes()
+
+        self.assertEqual(len(actual), 1) #a list of the single MergedAnnotation is returned
+        self.assertTrue(isinstance(actual[0], MergedAnnotation))
+        self.assertEqual(actual[0].type, self.sample_hutchner[4]['label'])
 
 
