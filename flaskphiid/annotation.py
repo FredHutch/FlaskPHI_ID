@@ -13,6 +13,13 @@ HUTCHNER_TYPE_MAP = {
 }
 TYPE_THRESHOLD = 0.5
 
+class IncompatibleTypeException(Exception):
+    def __init__(self, message, type_set):
+        additional_info = "previous types: {type_set}".format(type_set=type_set)
+        full_message = ":\n ".join([message, additional_info])
+        super(IncompatibleTypeException, self).__init__(full_message)
+        self.type_set = type_set
+
 
 class AnnotationFactory:
 
@@ -47,7 +54,20 @@ class AnnotationFactory:
         merged = MergedAnnotation()
         for ann in anns:
             merged.add_annotation(ann)
-        return merged
+        if merged.is_unknown_type:
+            return merged.split_annotations_by_subtypes()
+
+        return [merged]
+
+    @staticmethod
+    def from_unsplittable_annotations(anns):
+        if not anns:
+            raise ValueError("annotation list cannot be empty")
+        merged = MergedAnnotation()
+        for ann in anns:
+            merged.add_annotation(ann)
+
+        return [merged]
 
 
 class Annotation(object):
@@ -126,6 +146,10 @@ class MergedAnnotation(Annotation):
         pass
 
     @property
+    def is_unknown_type(self):
+        return self.type != 'UNKNOWN'
+
+    @property
     def score(self):
         if len(self.source_types) == 1:
             return max([x.score for x in self.source_annotations])
@@ -161,6 +185,26 @@ class MergedAnnotation(Annotation):
             self.type_map = self.type_map or ann.type_map
         self.source_annotations.append(ann)
 
+    def split_annotations_by_subtypes(self):
+        if len(self.source_types) == 1:
+            return [self]
+
+        if len(self.source_parent_types) == 1:
+            subtypes = [x for x in self.source_annotations if (x.type != x.parent_type)]
+            subtyped_annotations = []
+            running_annos = []
+            for anno in self.source_annotations:
+                if not running_annos or anno.type == running_annos[-1].type:
+                    running_annos.append(anno)
+                    continue
+                subtyped_annotations.extend(AnnotationFactory.from_unsplittable_annotations(running_annos))
+                running_annos = [anno]
+            subtyped_annotations.extend(AnnotationFactory.from_unsplittable_annotations(running_annos))
+
+            return subtyped_annotations
+
+        raise IncompatibleTypeException("Cannot split by subtype for multiple parent types", self.source_parent_types)
+
     def to_dict(self, detailed=False):
         data = super().to_dict()
         data['source_types'] = list(self.source_types)
@@ -180,11 +224,11 @@ def unionize_annotations(annotations):
     for idx in range(0, max([ann.end for ann in annotations])):
         # check if current annotations end at idx
         if current_anns and all((ann.end <= idx) for ann in current_anns):
-            final_anns.append(AnnotationFactory.from_annotations(current_anns))
+            final_anns.extend(AnnotationFactory.from_annotations(current_anns))
             current_anns = []
         # get all new annotations at idx
         while sorted_anns and (sorted_anns[0].start == idx):
             current_anns.append(sorted_anns.pop(0))
     if current_anns:
-        final_anns.append(AnnotationFactory.from_annotations(current_anns))
+        final_anns.extend(AnnotationFactory.from_annotations(current_anns))
     return final_anns
