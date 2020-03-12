@@ -42,14 +42,14 @@ setup(
     packages=['flaskphiid',],
     test_packages=['test', 'test.flaskphiid',],
     url='https://github.com/FredHutch/FlaskPHI_ID',
-    install_requires=['compmed',
+    install_requires=['compmed-pkg',
                       'HutchNERPredict',
                       'flask',
                       'boto3',
                       ],
     tests_require=['nose'],
     test_suite='nose.collector',
-    dependency_links = ["https://{}@github.com/FredHutch/ComprehendMedicalInterface/tarball/master#egg=compmed"
+    dependency_links = ["https://{}@github.com/FredHutch/ComprehendMedicalInterface/tarball/master#egg=compmed-pkg"
                             .format(get_env_variable('HDCGITAUTHTOKEN')),
                         "https://{}@github.com/FredHutch/HutchNERPredict/tarball/master#egg=HutchNERPredict"
                             .format(get_env_variable('HDCGITAUTHTOKEN')),
