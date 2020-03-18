@@ -55,7 +55,9 @@ class AnnotationFactory:
         for ann in anns:
             merged.add_annotation(ann)
         if merged.is_unknown_type:
-            return merged.split_annotations_by_subtypes()
+            split_types = merged.split_annotations_by_subtypes()
+
+            return split_types
 
         return [merged]
 
@@ -195,10 +197,26 @@ class MergedAnnotation(Annotation):
             running_annos = []
             for anno in self.source_annotations:
                 if not running_annos or anno.type == running_annos[-1].type:
+                    '''
+                    if we have a new annotation run, 
+                    OR 
+                    the current annotation type is the same as the previous
+                    add the current annotation to the run
+                    '''
                     running_annos.append(anno)
                     continue
+
+                if anno.origin.lower() != 'compmed' and running_annos[-1].origin.lower() == 'compmed':
+                    '''
+                    if the previous run was CompMed, and the current annotation is not
+                    Then throw out the previous run
+                    '''
+                    running_annos = [anno]
+                    continue
+
                 subtyped_annotations.extend(AnnotationFactory.from_unsplittable_annotations(running_annos))
                 running_annos = [anno]
+
             subtyped_annotations.extend(AnnotationFactory.from_unsplittable_annotations(running_annos))
 
             return subtyped_annotations
