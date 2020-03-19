@@ -348,53 +348,6 @@ class AnnotationTest(TestCase):
         self.assertEqual(len(union[5].source_annotations), 3)
         self.assertEqual(len(union[5].source_origins), 2)
 
-    def test_split_annotations_by_subtypes_single_type(self):
-        anns = [AnnotationFactory.from_compmed(ann) for ann in self.sample_compound_compmed]
-        anns += [AnnotationFactory.from_hutchner(ann) for ann in self.sample_compound_hutchner]
-        sorted_anns = sorted(anns, key=lambda x: x.start)
-        merged = MergedAnnotation()
-        for ann in anns:
-            merged.add_annotation(ann)
-        self.assertNotEqual(merged.type, "UNKNOWN")
 
-        actual = merged.split_annotations_by_subtypes()
-        self.assertEqual(len(actual), 4)
-        self.assertEqual(actual[0].type, 'ADDRESS') #the full span annotatoin
-        self.assertEqual(actual[1].type, "HOSPITAL_NAME")
-        self.assertEqual(actual[2].type, "WARD")
-        self.assertEqual(actual[3].type, "SPECIALTY")
-
-    def test_split_annotations_by_subtypes_multi_type_type_exception(self):
-        anns = [AnnotationFactory.from_compmed(self.sample_compmed[5])]
-        anns += [AnnotationFactory.from_hutchner(self.sample_hutchner[6])]
-        sorted_anns = sorted(anns, key=lambda x: x.start)
-        merged = MergedAnnotation()
-        for ann in sorted_anns:
-            merged.add_annotation(ann)
-        self.assertEqual(merged.type, "UNKNOWN")
-        with self.assertRaises(IncompatibleTypeException) as context:
-            actual = merged.split_annotations_by_subtypes()
-        self.assertTrue("URL_OR_IP" in context.exception.type_set)
-        self.assertTrue("NAME" in context.exception.type_set)
-
-    def test_split_annotations_by_subtypes_single_type_no_split(self):
-        '''
-        assert that when we attempt split a merged annotation that is all of a single child type,
-        we return the same merged annotation (self) as a list
-        :return:  [self]
-        '''
-        anns = [AnnotationFactory.from_hutchner(self.sample_hutchner[4])]
-        self.sample_hutchner[5]['start'] = self.sample_hutchner[4]['stop']
-        anns += [AnnotationFactory.from_hutchner(self.sample_hutchner[5])]
-        sorted_anns = sorted(anns, key=lambda x: x.start)
-        merged = MergedAnnotation()
-        for ann in sorted_anns:
-            merged.add_annotation(ann)
-
-        actual = merged.split_annotations_by_subtypes()
-
-        self.assertEqual(len(actual), 1) #a list of the single MergedAnnotation is returned
-        self.assertTrue(isinstance(actual[0], MergedAnnotation))
-        self.assertEqual(actual[0].type, self.sample_hutchner[4]['label'])
 
 
