@@ -55,7 +55,9 @@ class AnnotationFactory:
         for ann in anns:
             merged.add_annotation(ann)
         if merged.is_unknown_type:
-            return merged.split_annotations_by_subtypes()
+            split_types = merged.split_annotations_by_subtypes()
+
+            return split_types
 
         return [merged]
 
@@ -122,6 +124,10 @@ class MergedAnnotation(Annotation):
         return set([ann.parent_type for ann in self.source_annotations])
 
     @property
+    def source_child_types(self):
+        return set([ann.type for ann in self.source_annotations if ann.type != ann.parent_type])
+
+    @property
     def source_scores(self):
         return [ann.score for ann in self.source_annotations]
 
@@ -130,11 +136,18 @@ class MergedAnnotation(Annotation):
         return set([ann.origin for ann in self.source_annotations])
 
     @property
+    def source_child_annotations(self):
+        return [x for x in self.source_annotations if (x.type != x.parent_type)]
+
+    @property
     def type(self):
         if len(self.source_types) == 1:
             return self.source_annotations[0].type
         elif len(self.source_parent_types) == 1:
             subtypes = [x for x in self.source_annotations if (x.type != x.parent_type)]
+            if len(self.source_child_types) == 1: #if there's only a single child type for the merged annotation
+                return subtypes[0].type #return that child type
+
             top = max(subtypes, key=attrgetter('score'))
             if top.score >= TYPE_THRESHOLD:
                 return top.type
@@ -176,7 +189,7 @@ class MergedAnnotation(Annotation):
         elif (self.end < ann.start) or (self.start > ann.end):
             raise ValueError("annotation text must overlap")
         else:
-            if (self.start <= ann.start):
+            if self.start <= ann.start:
                 self.text = self.text + ann.text[(self.end-ann.start):]
             else:
                 self.text = ann.text + self.text[(ann.end-self.start):]
@@ -186,19 +199,38 @@ class MergedAnnotation(Annotation):
         self.source_annotations.append(ann)
 
     def split_annotations_by_subtypes(self):
-        if len(self.source_types) == 1:
+        if (len(self.source_types) == 1) or (len(self.source_child_types) == 1):
             return [self]
 
         if len(self.source_parent_types) == 1:
+            if (self.start < min([ a.start for a in self.source_child_annotations]) or
+                    self.end > max([a.end for a in self.source_child_annotations])):
+                '''
+                If the merged annotation spans longer than the constituent child annotations, 
+                then return the unsplit, merged annotation
+                '''
+                return [self]
             subtypes = [x for x in self.source_annotations if (x.type != x.parent_type)]
             subtyped_annotations = []
             running_annos = []
-            for anno in self.source_annotations:
+            for anno in self.source_child_annotations:
+                if anno.origin.lower() == 'compmed': #if we've made it this far, we are not interested in compmed annotations
+                    continue
+
                 if not running_annos or anno.type == running_annos[-1].type:
+                    '''
+                    if we have a new annotation run, 
+                    OR 
+                    the current annotation type is the same as the previous
+                    add the current annotation to the run
+                    '''
                     running_annos.append(anno)
                     continue
+
+                #otherwise add the current running annotation to the run, and reset
                 subtyped_annotations.extend(AnnotationFactory.from_unsplittable_annotations(running_annos))
                 running_annos = [anno]
+
             subtyped_annotations.extend(AnnotationFactory.from_unsplittable_annotations(running_annos))
 
             return subtyped_annotations
